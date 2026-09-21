@@ -1,5 +1,6 @@
 package com.planeo.planeo_admin.application.service;
 
+import com.planeo.planeo_admin.application.exception.UsernameAlreadyExistsException;
 import com.planeo.planeo_admin.domain.entity.User;
 import com.planeo.planeo_admin.domain.enums.Role;
 import com.planeo.planeo_admin.domain.port.UserRepository;
@@ -24,19 +25,28 @@ public class UserService {
     }
 
     public UserDTO create(CreateUserDTO dto) {
-        // Vérifie que le username n'existe pas déjà
-        userRepository.findByUsername(dto.username())
-                .ifPresent(u -> { throw new RuntimeException("Username already exists"); });
+        return createUser(dto.username(), dto.password(), Role.valueOf(dto.role()));
+    }
+
+    /**
+     * Shared by the direct-creation endpoint and the invitation-acceptance
+     * flow. The role is always supplied by the trusted caller (either the
+     * request body on the legacy endpoint, or the invitation record when
+     * registering from an invitation) - never chosen by the registering user.
+     */
+    public UserDTO createUser(String username, String password, Role role) {
+        userRepository.findByUsername(username)
+                .ifPresent(u -> { throw new UsernameAlreadyExistsException("Username already exists"); });
 
         // Sauvegarde dans la DB de planeo_admin
-        User user = new User(dto.username(), Role.valueOf(dto.role()));
+        User user = new User(username, role);
         User saved = userRepository.save(user);
 
         // Publie l'event sur Kafka
         userEventProducer.publishUserCreated(new UserEventDTO(
-                dto.username(),
-                dto.password(),
-                dto.role()
+                username,
+                password,
+                role.name()
         ));
 
         return new UserDTO(saved.getId(), saved.getUsername(), saved.getRole().name());
