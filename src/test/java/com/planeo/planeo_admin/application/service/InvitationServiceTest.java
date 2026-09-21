@@ -21,7 +21,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -56,19 +55,12 @@ class InvitationServiceTest {
     }
 
     @Test
-    void createInvitationBuildsRegistrationLinkAndRevokesPriorPendingOnes() {
-        Invitation stalePending = new Invitation("bob@example.com", Role.USER, "old-hash",
-                Instant.now().plus(1, ChronoUnit.DAYS), "admin");
-        when(invitationRepository.findByEmailAndStatus("bob@example.com", InvitationStatus.PENDING))
-                .thenReturn(List.of(stalePending));
+    void createInvitationBuildsRegistrationLink() {
         when(invitationRepository.save(any(Invitation.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        InvitationCreatedDTO result = invitationService.createInvitation(
-                new CreateInvitationDTO("bob@example.com", "USER"), "admin");
+        InvitationCreatedDTO result = invitationService.createInvitation(new CreateInvitationDTO("USER"), "admin");
 
-        assertThat(stalePending.getStatus()).isEqualTo(InvitationStatus.REVOKED);
         assertThat(result.registrationLink()).startsWith("https://planeo.example.com/register?token=");
-        assertThat(result.email()).isEqualTo("bob@example.com");
         assertThat(result.role()).isEqualTo("USER");
     }
 
@@ -82,7 +74,7 @@ class InvitationServiceTest {
 
     @Test
     void previewRejectsExpiredTokenAndMarksItExpired() {
-        Invitation invitation = new Invitation("bob@example.com", Role.USER, "hash",
+        Invitation invitation = new Invitation(Role.USER, "hash",
                 Instant.now().minus(1, ChronoUnit.HOURS), "admin");
         when(invitationRepository.findByTokenHash(anyString())).thenReturn(Optional.of(invitation));
 
@@ -95,7 +87,7 @@ class InvitationServiceTest {
 
     @Test
     void previewRejectsAlreadyAcceptedToken() {
-        Invitation invitation = new Invitation("bob@example.com", Role.USER, "hash",
+        Invitation invitation = new Invitation(Role.USER, "hash",
                 Instant.now().plus(1, ChronoUnit.DAYS), "admin");
         invitation.setStatus(InvitationStatus.ACCEPTED);
         when(invitationRepository.findByTokenHash(anyString())).thenReturn(Optional.of(invitation));
@@ -106,7 +98,7 @@ class InvitationServiceTest {
 
     @Test
     void acceptInvitationCreatesUserWithInvitationRoleNotAnyUserSuppliedRole() {
-        Invitation invitation = new Invitation("bob@example.com", Role.ADMIN, "hash",
+        Invitation invitation = new Invitation(Role.ADMIN, "hash",
                 Instant.now().plus(1, ChronoUnit.DAYS), "admin");
         when(invitationRepository.findByTokenHash(anyString())).thenReturn(Optional.of(invitation));
         when(userService.createUser(eq("bob"), eq("Str0ng!Passw0rd"), eq(Role.ADMIN)))
@@ -123,7 +115,7 @@ class InvitationServiceTest {
 
     @Test
     void acceptInvitationRejectsPasswordEqualToUsername() {
-        Invitation invitation = new Invitation("bob@example.com", Role.USER, "hash",
+        Invitation invitation = new Invitation(Role.USER, "hash",
                 Instant.now().plus(1, ChronoUnit.DAYS), "admin");
         when(invitationRepository.findByTokenHash(anyString())).thenReturn(Optional.of(invitation));
 

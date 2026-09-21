@@ -43,30 +43,22 @@ public class InvitationService {
     public InvitationCreatedDTO createInvitation(CreateInvitationDTO dto, String createdBy) {
         Role role = parseRole(dto.role());
 
-        // Avoid several concurrently valid tokens for the same target: any
-        // previously pending invitation for this email is superseded.
-        invitationRepository.findByEmailAndStatus(dto.email(), InvitationStatus.PENDING)
-                .forEach(pending -> {
-                    pending.setStatus(InvitationStatus.REVOKED);
-                    invitationRepository.save(pending);
-                });
-
         String rawToken = tokenGenerator.generateToken();
         String tokenHash = tokenGenerator.hash(rawToken);
         Instant expiresAt = Instant.now().plus(invitationProperties.getExpirationHours(), ChronoUnit.HOURS);
 
-        Invitation invitation = new Invitation(dto.email(), role, tokenHash, expiresAt, createdBy);
+        Invitation invitation = new Invitation(role, tokenHash, expiresAt, createdBy);
         Invitation saved = invitationRepository.save(invitation);
 
         String registrationLink = invitationProperties.getBaseUrl() + "/register?token=" + rawToken;
 
-        return new InvitationCreatedDTO(saved.getId(), saved.getEmail(), role.name(), registrationLink, expiresAt);
+        return new InvitationCreatedDTO(saved.getId(), role.name(), registrationLink, expiresAt);
     }
 
     @Transactional
     public InvitationPreviewDTO previewInvitation(String rawToken) {
         Invitation invitation = findUsableInvitationOrThrow(rawToken);
-        return new InvitationPreviewDTO(invitation.getEmail(), invitation.getRole().name(), invitation.getExpiresAt());
+        return new InvitationPreviewDTO(invitation.getRole().name(), invitation.getExpiresAt());
     }
 
     @Transactional

@@ -10,6 +10,5 @@ import java.util.Optional;
 
 public interface JpaInvitationRepository extends JpaRepository<Invitation, Long> {
     Optional<Invitation> findByTokenHash(String tokenHash);
-    List<Invitation> findByEmailAndStatus(String email, InvitationStatus status);
     List<Invitation> findByStatusAndExpiresAtBefore(InvitationStatus status, Instant instant);
 }

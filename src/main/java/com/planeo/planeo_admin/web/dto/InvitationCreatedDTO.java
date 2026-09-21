@@ -4,7 +4,6 @@ import java.time.Instant;
 
 public record InvitationCreatedDTO(
         Long id,
-        String email,
         String role,
         String registrationLink,
         Instant expiresAt

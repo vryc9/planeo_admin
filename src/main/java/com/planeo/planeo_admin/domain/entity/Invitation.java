@@ -12,17 +12,13 @@ import java.time.Instant;
 @Getter
 @Entity
 @Table(name = "invitations", indexes = {
-        @Index(name = "idx_invitations_token_hash", columnList = "tokenHash", unique = true),
-        @Index(name = "idx_invitations_email_status", columnList = "email,status")
+        @Index(name = "idx_invitations_token_hash", columnList = "tokenHash", unique = true)
 })
 public class Invitation {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(nullable = false)
-    private String email;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -56,8 +52,7 @@ public class Invitation {
     public Invitation() {
     }
 
-    public Invitation(String email, Role role, String tokenHash, Instant expiresAt, String createdBy) {
-        this.email = email;
+    public Invitation(Role role, String tokenHash, Instant expiresAt, String createdBy) {
         this.role = role;
         this.tokenHash = tokenHash;
         this.status = InvitationStatus.PENDING;

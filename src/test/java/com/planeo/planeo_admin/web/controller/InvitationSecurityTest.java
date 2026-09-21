@@ -45,7 +45,7 @@ class InvitationSecurityTest {
     void createInvitationWithoutApiKeyIsRejected() throws Exception {
         mockMvc.perform(post("/invitations")
                         .contentType("application/json")
-                        .content("{\"email\":\"bob@example.com\",\"role\":\"USER\"}"))
+                        .content("{\"role\":\"USER\"}"))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -56,20 +56,20 @@ class InvitationSecurityTest {
         mockMvc.perform(post("/invitations")
                         .header("X-Api-Key", "not-the-right-key")
                         .contentType("application/json")
-                        .content("{\"email\":\"bob@example.com\",\"role\":\"USER\"}"))
+                        .content("{\"role\":\"USER\"}"))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
     void createInvitationWithValidApiKeySucceeds() throws Exception {
         when(invitationService.createInvitation(any(), anyString())).thenReturn(
-                new InvitationCreatedDTO(1L, "bob@example.com", "USER",
+                new InvitationCreatedDTO(1L, "USER",
                         "https://planeo.example.com/register?token=abc", Instant.now()));
 
         mockMvc.perform(post("/invitations")
                         .header("X-Api-Key", "test-admin-key")
                         .contentType("application/json")
-                        .content("{\"email\":\"bob@example.com\",\"role\":\"USER\"}"))
+                        .content("{\"role\":\"USER\"}"))
                 .andExpect(status().isCreated());
     }
 
@@ -82,7 +82,7 @@ class InvitationSecurityTest {
     @Test
     void validateInvitationTokenIsPubliclyAccessible() throws Exception {
         when(invitationService.previewInvitation("some-token")).thenReturn(
-                new InvitationPreviewDTO("bob@example.com", "USER", Instant.now()));
+                new InvitationPreviewDTO("USER", Instant.now()));
 
         mockMvc.perform(get("/invitations/validate/some-token"))
                 .andExpect(status().isOk());

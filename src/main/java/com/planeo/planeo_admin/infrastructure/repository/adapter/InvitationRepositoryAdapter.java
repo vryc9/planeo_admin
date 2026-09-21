@@ -33,11 +33,6 @@ public class InvitationRepositoryAdapter implements InvitationRepository {
     }
 
     @Override
-    public List<Invitation> findByEmailAndStatus(String email, InvitationStatus status) {
-        return repository.findByEmailAndStatus(email, status);
-    }
-
-    @Override
     public List<Invitation> findByStatusAndExpiresAtBefore(InvitationStatus status, Instant instant) {
         return repository.findByStatusAndExpiresAtBefore(status, instant);
     }
