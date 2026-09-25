@@ -35,7 +35,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/invitations/*").hasRole("ADMIN")
                         .anyRequest().permitAll()
                 )
-                .addFilterBefore(new ApiKeyAuthenticationFilter(apiKeyProperties), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new GatewayAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint(new RestAuthenticationEntryPoint())
                         .accessDeniedHandler(new RestAccessDeniedHandler())
