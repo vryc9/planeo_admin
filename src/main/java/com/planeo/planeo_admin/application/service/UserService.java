@@ -3,12 +3,14 @@ package com.planeo.planeo_admin.application.service;
 import com.planeo.planeo_admin.application.exception.UsernameAlreadyExistsException;
 import com.planeo.planeo_admin.domain.entity.User;
 import com.planeo.planeo_admin.domain.enums.Role;
+import com.planeo.planeo_admin.domain.port.InvitationRepository;
 import com.planeo.planeo_admin.domain.port.UserRepository;
 import com.planeo.planeo_admin.infrastructure.kafka.UserEventProducer;
 import com.planeo.planeo_admin.web.dto.CreateUserDTO;
 import com.planeo.planeo_admin.web.dto.UserDTO;
 import com.planeo.planeo_admin.web.dto.UserEventDTO;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -18,10 +20,13 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final UserEventProducer userEventProducer;
+    private final InvitationRepository invitationRepository;
 
-    public UserService(UserRepository userRepository, UserEventProducer userEventProducer) {
+    public UserService(UserRepository userRepository, UserEventProducer userEventProducer,
+                       InvitationRepository invitationRepository) {
         this.userRepository = userRepository;
         this.userEventProducer = userEventProducer;
+        this.invitationRepository = invitationRepository;
     }
 
     public UserDTO create(CreateUserDTO dto) {
@@ -63,5 +68,19 @@ public class UserService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new NoSuchElementException("User not found"));
         userRepository.delete(user);
+    }
+
+    /**
+     * Erases the personal data held for a user (name and role) after an account deletion
+     * request, and anonymizes the invitations that still point to them. Idempotent: a replayed
+     * event on an already erased user does nothing.
+     */
+    @Transactional
+    public void erase(String username) {
+        userRepository.findByUsername(username).ifPresent(user -> {
+            invitationRepository.detachAcceptedUser(user.getId());
+            userRepository.delete(user);
+        });
+        invitationRepository.anonymizeCreator(username);
     }
 }

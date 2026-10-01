@@ -12,4 +12,10 @@ public interface InvitationRepository {
     Optional<Invitation> findById(Long id);
     Optional<Invitation> findByTokenHash(String tokenHash);
     List<Invitation> findByStatusAndExpiresAtBefore(InvitationStatus status, Instant instant);
+
+    /** Replaces the creator's username by a placeholder on every invitation they issued. */
+    void anonymizeCreator(String username);
+
+    /** Forgets which user account accepted an invitation. */
+    void detachAcceptedUser(Long userId);
 }
