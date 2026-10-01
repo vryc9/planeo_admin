@@ -36,4 +36,14 @@ public class InvitationRepositoryAdapter implements InvitationRepository {
     public List<Invitation> findByStatusAndExpiresAtBefore(InvitationStatus status, Instant instant) {
         return repository.findByStatusAndExpiresAtBefore(status, instant);
     }
+
+    @Override
+    public void anonymizeCreator(String username) {
+        repository.replaceCreator(username, "deleted-user");
+    }
+
+    @Override
+    public void detachAcceptedUser(Long userId) {
+        repository.clearAcceptedUser(userId);
+    }
 }
